@@ -104,23 +104,9 @@
     }
 
 
-    .valid {
-
-      color: green;
-
-    }
-
-
     .invalid {
 
       color: red;
-
-    }
-
-
-    .duplicate {
-
-      color: orange;
 
     }
 
@@ -136,14 +122,13 @@
 
 
   <p>
-
     Scan the QR Code on the E-Ticket
-
   </p>
 
 
-  <button id="startButton"
-          onclick="startScanner()">
+  <button
+    id="startButton"
+    onclick="startScanner()">
 
     📷 Start Scanner
 
@@ -153,18 +138,22 @@
   <div id="reader"></div>
 
 
-  <div id="result"
-       class="waiting">
+  <div
+    id="result"
+    class="waiting">
 
     Press "Start Scanner" to begin.
 
   </div>
 
 
-  <!-- QR Scanner -->
+  <!-- ========================================
+       QR SCANNER
+       ======================================== -->
 
-  <script src="https://unpkg.com/html5-qrcode"
-          type="text/javascript">
+  <script
+    src="https://unpkg.com/html5-qrcode"
+    type="text/javascript">
   </script>
 
 
@@ -172,7 +161,7 @@
 
 
     // ==========================================
-    // YOUR APPS SCRIPT WEB APP
+    // GOOGLE APPS SCRIPT WEB APP
     // ==========================================
 
     const SCRIPT_URL =
@@ -198,12 +187,15 @@
       }
 
 
-      document.getElementById("result")
-        .className = "waiting";
+      document.getElementById(
+        "result"
+      ).className = "waiting";
 
 
-      document.getElementById("result")
-        .innerHTML =
+      document.getElementById(
+        "result"
+      ).innerHTML =
+
         "Requesting camera access...";
 
 
@@ -266,6 +258,7 @@
 
       )
 
+
       .then(function() {
 
 
@@ -326,213 +319,10 @@
 
 
     // ==========================================
-    // SEND TICKET TO GOOGLE APPS SCRIPT
+    // CHECK TICKET
     // ==========================================
 
     function checkTicket(ticketNumber) {
-
-  const resultBox =
-    document.getElementById("result");
-
-  resultBox.className = "waiting";
-
-  resultBox.innerHTML =
-    "🔍 Checking ticket..." +
-    "<br><br>" +
-    "<strong>" +
-    ticketNumber +
-    "</strong>";
-
-  const callbackName =
-    "ticketCallback_" +
-    Date.now();
-
-  let finished = false;
-  let timeoutId = null;
-
-  // ==========================================
-  // JSONP CALLBACK
-  // ==========================================
-
-  window[callbackName] = function(result) {
-
-    alert("CALLBACK FUNCTION CREATED");
-
-    console.log(
-      "JSONP CALLBACK RECEIVED:",
-      result
-    );
-
-    if (finished) {
-      return;
-    }
-
-    finished = true;
-
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
-    displayResult(result);
-
-    delete window[callbackName];
-
-    if (
-      script &&
-      script.parentNode
-    ) {
-      script.parentNode.removeChild(script);
-    }
-
-  };
-
-
-  // ==========================================
-  // CREATE SCRIPT
-  // ==========================================
-
-  const script =
-    document.createElement("script");
-
-  const requestUrl =
-    SCRIPT_URL +
-    "?ticket=" +
-    encodeURIComponent(
-      String(ticketNumber).trim()
-    ) +
-    "&callback=" +
-    encodeURIComponent(
-      callbackName
-    ) +
-    "&_=" +
-    Date.now();
-
-  console.log(
-    "REQUEST URL:",
-    requestUrl
-  );
-
-
-  script.src = requestUrl;
-
-  script.type =
-    "text/javascript";
-
-  script.async = false;
-
-
-  // ==========================================
-  // SCRIPT LOADED
-  // ==========================================
-
-  script.onload = function() {
-
-    console.log(
-      "Apps Script response loaded."
-    );
-
-    /*
-     * IMPORTANT:
-     *
-     * JSONP should call window[callbackName].
-     *
-     * If onload happens but callback
-     * has not executed, wait for timeout.
-     */
-
-  };
-
-
-  // ==========================================
-  // SCRIPT ERROR
-  // ==========================================
-
-  script.onerror = function(error) {
-
-    console.error(
-      "JSONP SCRIPT ERROR:",
-      error
-    );
-
-    if (finished) {
-      return;
-    }
-
-    finished = true;
-
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
-    delete window[callbackName];
-
-    displayError(
-      "API CONNECTION ERROR"
-    );
-
-    if (
-      script.parentNode
-    ) {
-      script.parentNode.removeChild(
-        script
-      );
-    }
-
-  };
-
-
-  // ==========================================
-  // TIMEOUT
-  // ==========================================
-
-  timeoutId = setTimeout(
-    function() {
-
-      if (finished) {
-        return;
-      }
-
-      finished = true;
-
-      console.error(
-        "JSONP TIMEOUT"
-      );
-
-      delete window[callbackName];
-
-      displayError(
-        "API TIMEOUT"
-      );
-
-      if (
-        script.parentNode
-      ) {
-        script.parentNode.removeChild(
-          script
-        );
-      }
-
-    },
-    15000
-  );
-
-
-  // ==========================================
-  // SEND REQUEST
-  // ==========================================
-
-  document.head.appendChild(
-    script
-  );
-
-}
-
-
-    // ==========================================
-    // DISPLAY RESULT
-    // ==========================================
-
-    function displayResult(result) {
 
 
       const resultBox =
@@ -541,176 +331,39 @@
         );
 
 
-      // ========================================
-      // VALID
-      // ========================================
+      resultBox.className =
+        "waiting";
 
-      if (
-        result.status ===
-        "VALID"
-      ) {
 
+      resultBox.innerHTML =
 
-        resultBox.className =
-          "valid";
-
-
-        resultBox.innerHTML =
-
-          "✅ VALID TICKET" +
-
-          "<br><br>" +
-
-          "<strong>" +
-
-          result.ticketNumber +
-
-          "</strong>" +
-
-          "<br><br>" +
-
-          result.name +
-
-          "<br>" +
-
-          result.ticketType +
-
-          "<br><br>" +
-
-          "<strong>CHECKED IN</strong>";
-
-      }
-
-
-      // ========================================
-      // ALREADY CHECKED IN
-      // ========================================
-
-      else if (
-        result.status ===
-        "ALREADY_CHECKED_IN"
-      ) {
-
-
-        resultBox.className =
-          "duplicate";
-
-
-        resultBox.innerHTML =
-
-          "⚠️ ALREADY CHECKED IN" +
-
-          "<br><br>" +
-
-          "<strong>" +
-
-          result.ticketNumber +
-
-          "</strong>" +
-
-          "<br><br>" +
-
-          result.name +
-
-          "<br>" +
-
-          result.ticketType +
-
-          "<br><br>" +
-
-          "First check-in:" +
-
-          "<br>" +
-
-          result.checkInTime;
-
-      }
-
-
-      // ========================================
-      // INVALID
-      // ========================================
-
-      else {
-
-
-        resultBox.className =
-          "invalid";
-
-
-        resultBox.innerHTML =
-
-          "❌ INVALID TICKET" +
-
-          "<br><br>" +
-
-          "<strong>" +
-
-          (
-            result.ticketNumber ||
-            "UNKNOWN"
-          ) +
-
-          "</strong>";
-
-      }
-
-
-      // ========================================
-      // SCAN NEXT
-      // ========================================
-
-      document.getElementById(
-        "startButton"
-      ).style.display = "block";
-
-
-      document.getElementById(
-        "startButton"
-      ).innerHTML =
-
-        "📷 Scan Next Ticket";
-
-    }
-
-
-    // ==========================================
-    // ERROR
-    // ==========================================
-
-    function displayError(error) {
-
-
-      document.getElementById(
-        "result"
-      ).className = "invalid";
-
-
-      document.getElementById(
-        "result"
-      ).innerHTML =
-
-        "❌ SYSTEM ERROR" +
+        "🔍 Checking ticket..." +
 
         "<br><br>" +
 
-        "<small>" +
+        "<strong>" +
 
-        String(error) +
+        ticketNumber +
 
-        "</small>";
-
-
-      document.getElementById(
-        "startButton"
-      ).style.display = "block";
+        "</strong>";
 
 
-      document.getElementById(
-        "startButton"
-      ).innerHTML =
+      const url =
 
-        "📷 Try Again";
+        SCRIPT_URL +
+
+        "?ticket=" +
+
+        encodeURIComponent(
+          String(ticketNumber).trim()
+        );
+
+
+      // ========================================
+      // OPEN APPS SCRIPT RESULT PAGE
+      // ========================================
+
+      window.location.href = url;
 
     }
 
