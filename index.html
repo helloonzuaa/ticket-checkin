@@ -409,30 +409,65 @@
     // CHECK TICKET
     // ==========================================
 
-    function checkTicket(ticketNumber) {
+   function checkTicket(ticketNumber) {
 
+  const resultBox =
+    document.getElementById("result");
 
-      const resultBox =
-        document.getElementById(
-          "result"
-        );
+  resultBox.className = "waiting";
 
+  resultBox.innerHTML =
+    "🔍 Checking ticket..." +
+    "<br><br>" +
+    "<strong>" +
+    ticketNumber +
+    "</strong>";
 
-      resultBox.className =
-        "waiting";
+  const callbackName =
+    "ticketCheckCallback";
 
+  window[callbackName] =
+    function(result) {
+
+      displayResult(result);
+
+      delete window[callbackName];
+
+      if (script) {
+        script.remove();
+      }
+
+    };
+
+  const script =
+    document.createElement("script");
+
+  script.src =
+    SCRIPT_URL +
+    "?ticket=" +
+    encodeURIComponent(
+      String(ticketNumber).trim()
+    ) +
+    "&callback=" +
+    callbackName;
+
+  script.onerror =
+    function() {
+
+      resultBox.className = "invalid";
 
       resultBox.innerHTML =
-
-        "🔍 Checking ticket..." +
-
+        "❌ API CONNECTION ERROR" +
         "<br><br>" +
+        "Unable to connect to ticket system.";
 
-        "<strong>" +
+      delete window[callbackName];
 
-        ticketNumber +
+      script.remove();
+    };
 
-        "</strong>";
+  document.body.appendChild(script);
+}
 
 
       // ========================================
