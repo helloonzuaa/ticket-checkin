@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket Callback</title>
+</head>
+
+<body>
+
+<script>
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const resultData =
+    params.get("result");
+
+  if (resultData) {
+
+    try {
+
+      const result =
+        JSON.parse(
+          decodeURIComponent(resultData)
+        );
+
+      window.parent.postMessage(
+        {
+          type: "TICKET_RESULT",
+          result: result
+        },
+        "*"
+      );
+
+    } catch (error) {
+
+      window.parent.postMessage(
+        {
+          type: "TICKET_RESULT",
+          result: {
+            status: "ERROR",
+            message: "Invalid result data."
+          }
+        },
+        "*"
+      );
+
+    }
+
+  }
+
+</script>
+
+</body>
+
+</html>
