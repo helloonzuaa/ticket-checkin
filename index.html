@@ -145,6 +145,13 @@
 
     }
 
+
+    #apiFrame {
+
+      display: none;
+
+    }
+
   </style>
 
 </head>
@@ -183,6 +190,16 @@
 
 
   <!-- ========================================
+       HIDDEN APPS SCRIPT FRAME
+       ======================================== -->
+
+  <iframe
+    id="apiFrame"
+    name="apiFrame">
+  </iframe>
+
+
+  <!-- ========================================
        QR SCANNER
        ======================================== -->
 
@@ -206,6 +223,36 @@
     let scanner = null;
 
     let scannerRunning = false;
+
+
+    // ==========================================
+    // RECEIVE RESULT FROM APPS SCRIPT
+    // ==========================================
+
+    window.addEventListener(
+      "message",
+      function(event) {
+
+
+        if (
+          !event.data ||
+          event.data.type !==
+          "TICKET_RESULT"
+        ) {
+
+          return;
+
+        }
+
+
+        const result =
+          event.data.result;
+
+
+        displayResult(result);
+
+      }
+    );
 
 
     // ==========================================
@@ -330,6 +377,11 @@
 
 
         document.getElementById(
+          "startButton"
+        ).style.display = "block";
+
+
+        document.getElementById(
           "result"
         ).className = "invalid";
 
@@ -384,54 +436,10 @@
 
 
       // ========================================
-      // CREATE UNIQUE CALLBACK
+      // CREATE APPS SCRIPT URL
       // ========================================
 
-      const callbackName =
-        "ticketCallback_" +
-        Date.now();
-
-
-      // ========================================
-      // CALLBACK FUNCTION
-      // ========================================
-
-      window[callbackName] =
-        function(result) {
-
-
-          // Remove callback
-
-          delete window[callbackName];
-
-
-          // Remove script
-
-          if (
-            script &&
-            script.parentNode
-          ) {
-
-            script.parentNode
-              .removeChild(script);
-
-          }
-
-
-          displayResult(result);
-
-        };
-
-
-      // ========================================
-      // CREATE JSONP SCRIPT
-      // ========================================
-
-      const script =
-        document.createElement("script");
-
-
-      script.src =
+      const url =
 
         SCRIPT_URL +
 
@@ -439,66 +447,20 @@
 
         encodeURIComponent(
           String(ticketNumber).trim()
-        ) +
-
-        "&callback=" +
-
-        callbackName;
+        );
 
 
       // ========================================
-      // CONNECTION ERROR
+      // LOAD APPS SCRIPT INSIDE IFRAME
       // ========================================
 
-      script.onerror =
-        function() {
+      const frame =
+        document.getElementById(
+          "apiFrame"
+        );
 
 
-          delete window[callbackName];
-
-
-          if (
-            script.parentNode
-          ) {
-
-            script.parentNode
-              .removeChild(script);
-
-          }
-
-
-          resultBox.className =
-            "invalid";
-
-
-          resultBox.innerHTML =
-
-            "❌ SYSTEM ERROR" +
-
-            "<br><br>" +
-
-            "Unable to connect to ticket system." +
-
-            "<br><br>" +
-
-            "<button" +
-
-            " class=\"resultButton\"" +
-
-            " onclick=\"location.reload()\"" +
-
-            ">" +
-
-            "🔄 Try Again" +
-
-            "</button>";
-
-        };
-
-
-      document.body.appendChild(
-        script
-      );
+      frame.src = url;
 
     }
 
