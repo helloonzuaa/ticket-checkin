@@ -331,119 +331,199 @@
 
     function checkTicket(ticketNumber) {
 
+  const resultBox =
+    document.getElementById("result");
 
-      document.getElementById(
-        "result"
-      ).className = "waiting";
+  resultBox.className = "waiting";
+
+  resultBox.innerHTML =
+    "🔍 Checking ticket..." +
+    "<br><br>" +
+    "<strong>" +
+    ticketNumber +
+    "</strong>";
+
+  const callbackName =
+    "ticketCallback_" +
+    Date.now();
+
+  let finished = false;
+  let timeoutId = null;
+
+  // ==========================================
+  // JSONP CALLBACK
+  // ==========================================
+
+  window[callbackName] = function(result) {
+
+    console.log(
+      "JSONP CALLBACK RECEIVED:",
+      result
+    );
+
+    if (finished) {
+      return;
+    }
+
+    finished = true;
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    displayResult(result);
+
+    delete window[callbackName];
+
+    if (
+      script &&
+      script.parentNode
+    ) {
+      script.parentNode.removeChild(script);
+    }
+
+  };
 
 
-      document.getElementById(
-        "result"
-      ).innerHTML =
+  // ==========================================
+  // CREATE SCRIPT
+  // ==========================================
 
-        "🔍 Checking ticket..." +
+  const script =
+    document.createElement("script");
 
-        "<br><br>" +
-
-        "<strong>" +
-
-        ticketNumber +
-
-        "</strong>";
-
-
- const callbackName =
-  "ticketCallback_" + Date.now();
-
-let finished = false;
-
-window[callbackName] = function(result) {
-
-  if (finished) return;
-
-  finished = true;
-
-  clearTimeout(timeout);
-
-  console.log("Apps Script response:", result);
-
-  displayResult(result);
-
-  delete window[callbackName];
-
-  if (script.parentNode) {
-    script.parentNode.removeChild(script);
-  }
-};
-
-const script =
-  document.createElement("script");
-
-script.src =
-  SCRIPT_URL +
-  "?ticket=" +
-  encodeURIComponent(ticketNumber) +
-  "&callback=" +
-  callbackName +
-  "&_=" +
-  Date.now();
-
-script.onload = function() {
+  const requestUrl =
+    SCRIPT_URL +
+    "?ticket=" +
+    encodeURIComponent(
+      String(ticketNumber).trim()
+    ) +
+    "&callback=" +
+    encodeURIComponent(
+      callbackName
+    ) +
+    "&_=" +
+    Date.now();
 
   console.log(
-    "Apps Script script loaded."
+    "REQUEST URL:",
+    requestUrl
   );
 
-};
 
-script.onerror = function() {
+  script.src = requestUrl;
 
-  if (finished) return;
+  script.type =
+    "text/javascript";
 
-  finished = true;
+  script.async = false;
 
-  clearTimeout(timeout);
 
-  console.error(
-    "Apps Script JSONP request failed."
-  );
+  // ==========================================
+  // SCRIPT LOADED
+  // ==========================================
 
-  delete window[callbackName];
+  script.onload = function() {
 
-  displayError(
-    "API CONNECTION ERROR"
-  );
+    console.log(
+      "Apps Script response loaded."
+    );
 
-  if (script.parentNode) {
-    script.parentNode.removeChild(script);
-  }
-};
+    /*
+     * IMPORTANT:
+     *
+     * JSONP should call window[callbackName].
+     *
+     * If onload happens but callback
+     * has not executed, wait for timeout.
+     */
 
-const timeout = setTimeout(function() {
+  };
 
-  if (finished) return;
 
-  finished = true;
+  // ==========================================
+  // SCRIPT ERROR
+  // ==========================================
 
-  console.error(
-    "Apps Script response timeout."
-  );
+  script.onerror = function(error) {
 
-  delete window[callbackName];
+    console.error(
+      "JSONP SCRIPT ERROR:",
+      error
+    );
 
-  displayError(
-    "API TIMEOUT"
-  );
-
-  if (script.parentNode) {
-    script.parentNode.removeChild(script);
-  }
-
-}, 10000);
-
-document.body.appendChild(script);
-
+    if (finished) {
+      return;
     }
+
+    finished = true;
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    delete window[callbackName];
+
+    displayError(
+      "API CONNECTION ERROR"
+    );
+
+    if (
+      script.parentNode
+    ) {
+      script.parentNode.removeChild(
+        script
+      );
+    }
+
+  };
+
+
+  // ==========================================
+  // TIMEOUT
+  // ==========================================
+
+  timeoutId = setTimeout(
+    function() {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+
+      console.error(
+        "JSONP TIMEOUT"
+      );
+
+      delete window[callbackName];
+
+      displayError(
+        "API TIMEOUT"
+      );
+
+      if (
+        script.parentNode
+      ) {
+        script.parentNode.removeChild(
+          script
+        );
+      }
+
+    },
+    15000
+  );
+
+
+  // ==========================================
+  // SEND REQUEST
+  // ==========================================
+
+  document.head.appendChild(
+    script
+  );
+
+}
 
 
     // ==========================================
