@@ -678,3 +678,27 @@
 </body>
 
 </html>
+
+<script>
+
+function testCallback(result) {
+
+  document.body.innerHTML =
+    "<h1>JSONP WORKS!</h1>" +
+    "<pre>" +
+    JSON.stringify(result, null, 2) +
+    "</pre>";
+
+}
+
+const testScript =
+  document.createElement("script");
+
+testScript.src =
+  "https://script.google.com/macros/s/AKfycbzF3QDGBVMbo_deaAJLfmtNz1ia8Dbi-blqC4xmH0r2sPlSbT6WGQJYrrSjabU0JCPlfw/exec" +
+  "?ticket=R0014" +
+  "&callback=testCallback";
+
+document.body.appendChild(testScript);
+
+</script>
