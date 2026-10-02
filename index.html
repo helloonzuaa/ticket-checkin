@@ -146,12 +146,6 @@
     }
 
 
-    #apiFrame {
-
-      display: none;
-
-    }
-
   </style>
 
 </head>
@@ -190,16 +184,6 @@
 
 
   <!-- ========================================
-       HIDDEN APPS SCRIPT FRAME
-       ======================================== -->
-
-  <iframe
-    id="apiFrame"
-    name="apiFrame">
-  </iframe>
-
-
-  <!-- ========================================
        QR SCANNER
        ======================================== -->
 
@@ -223,36 +207,6 @@
     let scanner = null;
 
     let scannerRunning = false;
-
-
-    // ==========================================
-    // RECEIVE RESULT FROM APPS SCRIPT
-    // ==========================================
-
-    window.addEventListener(
-      "message",
-      function(event) {
-
-
-        if (
-          !event.data ||
-          event.data.type !==
-          "TICKET_RESULT"
-        ) {
-
-          return;
-
-        }
-
-
-        const result =
-          event.data.result;
-
-
-        displayResult(result);
-
-      }
-    );
 
 
     // ==========================================
@@ -406,75 +360,65 @@
 
 
     // ==========================================
-    // CHECK TICKET
+    // CHECK TICKET USING JSONP
     // ==========================================
 
-   function checkTicket(ticketNumber) {
+    function checkTicket(ticketNumber) {
 
-  const resultBox =
-    document.getElementById("result");
 
-  resultBox.className = "waiting";
+      const resultBox =
+        document.getElementById(
+          "result"
+        );
 
-  resultBox.innerHTML =
-    "🔍 Checking ticket..." +
-    "<br><br>" +
-    "<strong>" +
-    ticketNumber +
-    "</strong>";
 
-  const callbackName =
-    "ticketCheckCallback";
+      resultBox.className =
+        "waiting";
 
-  window[callbackName] =
-    function(result) {
-
-      displayResult(result);
-
-      delete window[callbackName];
-
-      if (script) {
-        script.remove();
-      }
-
-    };
-
-  const script =
-    document.createElement("script");
-
-  script.src =
-    SCRIPT_URL +
-    "?ticket=" +
-    encodeURIComponent(
-      String(ticketNumber).trim()
-    ) +
-    "&callback=" +
-    callbackName;
-
-  script.onerror =
-    function() {
-
-      resultBox.className = "invalid";
 
       resultBox.innerHTML =
-        "❌ API CONNECTION ERROR" +
+
+        "🔍 Checking ticket..." +
+
         "<br><br>" +
-        "Unable to connect to ticket system.";
 
-      delete window[callbackName];
+        "<strong>" +
 
-      script.remove();
-    };
+        ticketNumber +
 
-  document.body.appendChild(script);
-}
+        "</strong>";
 
 
-      // ========================================
-      // CREATE APPS SCRIPT URL
-      // ========================================
+      const callbackName =
+        "ticketCheckCallback";
 
-      const url =
+
+      window[callbackName] =
+        function(result) {
+
+
+          displayResult(result);
+
+
+          delete window[callbackName];
+
+
+          if (script) {
+
+            script.remove();
+
+          }
+
+        };
+
+
+      const script =
+        document.createElement(
+          "script"
+        );
+
+
+      script.src =
 
         SCRIPT_URL +
 
@@ -482,20 +426,41 @@
 
         encodeURIComponent(
           String(ticketNumber).trim()
-        );
+        ) +
+
+        "&callback=" +
+
+        callbackName;
 
 
-      // ========================================
-      // LOAD APPS SCRIPT INSIDE IFRAME
-      // ========================================
-
-      const frame =
-        document.getElementById(
-          "apiFrame"
-        );
+      script.onerror =
+        function() {
 
 
-      frame.src = url;
+          resultBox.className =
+            "invalid";
+
+
+          resultBox.innerHTML =
+
+            "❌ API CONNECTION ERROR" +
+
+            "<br><br>" +
+
+            "Unable to connect to ticket system.";
+
+
+          delete window[callbackName];
+
+
+          script.remove();
+
+        };
+
+
+      document.body.appendChild(
+        script
+      );
 
     }
 
@@ -704,6 +669,11 @@
         "reader"
       ).innerHTML = "";
 
+
+      scanner = null;
+
+      scannerRunning = false;
+
     }
 
 
@@ -713,27 +683,3 @@
 </body>
 
 </html>
-
-<script>
-
-function testCallback(result) {
-
-  document.body.innerHTML =
-    "<h1>JSONP WORKS!</h1>" +
-    "<pre>" +
-    JSON.stringify(result, null, 2) +
-    "</pre>";
-
-}
-
-const testScript =
-  document.createElement("script");
-
-testScript.src =
-  "https://script.google.com/macros/s/AKfycbzF3QDGBVMbo_deaAJLfmtNz1ia8Dbi-blqC4xmH0r2sPlSbT6WGQJYrrSjabU0JCPlfw/exec" +
-  "?ticket=R0014" +
-  "&callback=testCallback";
-
-document.body.appendChild(testScript);
-
-</script>
