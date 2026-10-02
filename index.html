@@ -352,67 +352,96 @@
         "</strong>";
 
 
-      const callbackName =
-        "ticketCallback_" +
-        Date.now();
+ const callbackName =
+  "ticketCallback_" + Date.now();
 
+let finished = false;
 
-      window[callbackName] =
-        function(result) {
+window[callbackName] = function(result) {
 
+  if (finished) return;
 
-          displayResult(
-            result
-          );
+  finished = true;
 
+  clearTimeout(timeout);
 
-          delete window[
-            callbackName
-          ];
+  console.log("Apps Script response:", result);
 
-        };
+  displayResult(result);
 
+  delete window[callbackName];
 
-      const script =
-        document.createElement(
-          "script"
-        );
+  if (script.parentNode) {
+    script.parentNode.removeChild(script);
+  }
+};
 
+const script =
+  document.createElement("script");
 
-      script.src =
+script.src =
+  SCRIPT_URL +
+  "?ticket=" +
+  encodeURIComponent(ticketNumber) +
+  "&callback=" +
+  callbackName +
+  "&_=" +
+  Date.now();
 
-        SCRIPT_URL +
+script.onload = function() {
 
-        "?ticket=" +
+  console.log(
+    "Apps Script script loaded."
+  );
 
-        encodeURIComponent(
-          ticketNumber
-        ) +
+};
 
-        "&callback=" +
+script.onerror = function() {
 
-        callbackName;
+  if (finished) return;
 
+  finished = true;
 
-      script.onerror =
-        function() {
+  clearTimeout(timeout);
 
+  console.error(
+    "Apps Script JSONP request failed."
+  );
 
-          delete window[
-            callbackName
-          ];
+  delete window[callbackName];
 
+  displayError(
+    "API CONNECTION ERROR"
+  );
 
-          displayError(
-            "Unable to connect to ticket system."
-          );
+  if (script.parentNode) {
+    script.parentNode.removeChild(script);
+  }
+};
 
-        };
+const timeout = setTimeout(function() {
 
+  if (finished) return;
 
-      document.body.appendChild(
-        script
-      );
+  finished = true;
+
+  console.error(
+    "Apps Script response timeout."
+  );
+
+  delete window[callbackName];
+
+  displayError(
+    "API TIMEOUT"
+  );
+
+  if (script.parentNode) {
+    script.parentNode.removeChild(script);
+  }
+
+}, 10000);
+
+document.body.appendChild(script);
 
     }
 
