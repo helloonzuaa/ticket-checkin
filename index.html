@@ -104,16 +104,23 @@
     }
 
 
-    .success {
+    .valid {
 
       color: green;
 
     }
 
 
-    .error {
+    .invalid {
 
       color: red;
+
+    }
+
+
+    .duplicate {
+
+      color: orange;
 
     }
 
@@ -154,22 +161,27 @@
   </div>
 
 
-
-  <!-- QR Scanner Library -->
+  <!-- QR Scanner -->
 
   <script src="https://unpkg.com/html5-qrcode"
           type="text/javascript">
   </script>
 
 
-
   <script>
+
+
+    // ==========================================
+    // YOUR APPS SCRIPT WEB APP
+    // ==========================================
+
+    const SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbzF3QDGBVMbo_deaAJLfmtNz1ia8Dbi-blqC4xmH0r2sPlSbT6WGQJYrrSjabU0JCPlfw/exec";
 
 
     let scanner = null;
 
     let scannerRunning = false;
-
 
 
     // ==========================================
@@ -188,6 +200,7 @@
 
       document.getElementById("result")
         .className = "waiting";
+
 
       document.getElementById("result")
         .innerHTML =
@@ -221,29 +234,33 @@
         function(decodedText) {
 
 
-          document.getElementById("result")
-            .className = "success";
+          if (!scannerRunning) {
 
+            return;
 
-          document.getElementById("result")
-            .innerHTML =
-
-            "✅ QR CODE DETECTED" +
-
-            "<br><br>" +
-
-            "<strong>" +
-
-            decodedText +
-
-            "</strong>";
+          }
 
 
           scannerRunning = false;
 
 
-          scanner.stop();
+          scanner.stop()
 
+            .then(function() {
+
+              checkTicket(
+                decodedText
+              );
+
+            })
+
+            .catch(function() {
+
+              checkTicket(
+                decodedText
+              );
+
+            });
 
         }
 
@@ -255,23 +272,25 @@
         scannerRunning = true;
 
 
-        document.getElementById("startButton")
-          .style.display = "none";
+        document.getElementById(
+          "startButton"
+        ).style.display = "none";
 
 
-        document.getElementById("result")
-          .className = "waiting";
+        document.getElementById(
+          "result"
+        ).className = "waiting";
 
 
-        document.getElementById("result")
-          .innerHTML =
+        document.getElementById(
+          "result"
+        ).innerHTML =
 
           "📷 Camera ready." +
 
           "<br><br>" +
 
           "Point the camera at the QR Code.";
-
 
       })
 
@@ -282,12 +301,14 @@
         scannerRunning = false;
 
 
-        document.getElementById("result")
-          .className = "error";
+        document.getElementById(
+          "result"
+        ).className = "invalid";
 
 
-        document.getElementById("result")
-          .innerHTML =
+        document.getElementById(
+          "result"
+        ).innerHTML =
 
           "❌ Unable to access camera." +
 
@@ -301,6 +322,284 @@
 
       });
 
+    }
+
+
+    // ==========================================
+    // SEND TICKET TO GOOGLE APPS SCRIPT
+    // ==========================================
+
+    function checkTicket(ticketNumber) {
+
+
+      document.getElementById(
+        "result"
+      ).className = "waiting";
+
+
+      document.getElementById(
+        "result"
+      ).innerHTML =
+
+        "🔍 Checking ticket..." +
+
+        "<br><br>" +
+
+        "<strong>" +
+
+        ticketNumber +
+
+        "</strong>";
+
+
+      const callbackName =
+        "ticketCallback_" +
+        Date.now();
+
+
+      window[callbackName] =
+        function(result) {
+
+
+          displayResult(
+            result
+          );
+
+
+          delete window[
+            callbackName
+          ];
+
+        };
+
+
+      const script =
+        document.createElement(
+          "script"
+        );
+
+
+      script.src =
+
+        SCRIPT_URL +
+
+        "?ticket=" +
+
+        encodeURIComponent(
+          ticketNumber
+        ) +
+
+        "&callback=" +
+
+        callbackName;
+
+
+      script.onerror =
+        function() {
+
+
+          delete window[
+            callbackName
+          ];
+
+
+          displayError(
+            "Unable to connect to ticket system."
+          );
+
+        };
+
+
+      document.body.appendChild(
+        script
+      );
+
+    }
+
+
+    // ==========================================
+    // DISPLAY RESULT
+    // ==========================================
+
+    function displayResult(result) {
+
+
+      const resultBox =
+        document.getElementById(
+          "result"
+        );
+
+
+      // ========================================
+      // VALID
+      // ========================================
+
+      if (
+        result.status ===
+        "VALID"
+      ) {
+
+
+        resultBox.className =
+          "valid";
+
+
+        resultBox.innerHTML =
+
+          "✅ VALID TICKET" +
+
+          "<br><br>" +
+
+          "<strong>" +
+
+          result.ticketNumber +
+
+          "</strong>" +
+
+          "<br><br>" +
+
+          result.name +
+
+          "<br>" +
+
+          result.ticketType +
+
+          "<br><br>" +
+
+          "<strong>CHECKED IN</strong>";
+
+      }
+
+
+      // ========================================
+      // ALREADY CHECKED IN
+      // ========================================
+
+      else if (
+        result.status ===
+        "ALREADY_CHECKED_IN"
+      ) {
+
+
+        resultBox.className =
+          "duplicate";
+
+
+        resultBox.innerHTML =
+
+          "⚠️ ALREADY CHECKED IN" +
+
+          "<br><br>" +
+
+          "<strong>" +
+
+          result.ticketNumber +
+
+          "</strong>" +
+
+          "<br><br>" +
+
+          result.name +
+
+          "<br>" +
+
+          result.ticketType +
+
+          "<br><br>" +
+
+          "First check-in:" +
+
+          "<br>" +
+
+          result.checkInTime;
+
+      }
+
+
+      // ========================================
+      // INVALID
+      // ========================================
+
+      else {
+
+
+        resultBox.className =
+          "invalid";
+
+
+        resultBox.innerHTML =
+
+          "❌ INVALID TICKET" +
+
+          "<br><br>" +
+
+          "<strong>" +
+
+          (
+            result.ticketNumber ||
+            "UNKNOWN"
+          ) +
+
+          "</strong>";
+
+      }
+
+
+      // ========================================
+      // SCAN NEXT
+      // ========================================
+
+      document.getElementById(
+        "startButton"
+      ).style.display = "block";
+
+
+      document.getElementById(
+        "startButton"
+      ).innerHTML =
+
+        "📷 Scan Next Ticket";
+
+    }
+
+
+    // ==========================================
+    // ERROR
+    // ==========================================
+
+    function displayError(error) {
+
+
+      document.getElementById(
+        "result"
+      ).className = "invalid";
+
+
+      document.getElementById(
+        "result"
+      ).innerHTML =
+
+        "❌ SYSTEM ERROR" +
+
+        "<br><br>" +
+
+        "<small>" +
+
+        String(error) +
+
+        "</small>";
+
+
+      document.getElementById(
+        "startButton"
+      ).style.display = "block";
+
+
+      document.getElementById(
+        "startButton"
+      ).innerHTML =
+
+        "📷 Try Again";
 
     }
 
