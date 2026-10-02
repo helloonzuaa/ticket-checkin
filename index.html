@@ -104,9 +104,44 @@
     }
 
 
+    .valid {
+
+      color: green;
+
+    }
+
+
+    .already {
+
+      color: orange;
+
+    }
+
+
     .invalid {
 
       color: red;
+
+    }
+
+
+    .resultButton {
+
+      margin-top: 20px;
+
+      padding: 15px 25px;
+
+      font-size: 18px;
+
+      font-weight: bold;
+
+      border: none;
+
+      border-radius: 10px;
+
+      background: #222;
+
+      color: white;
 
     }
 
@@ -348,7 +383,55 @@
         "</strong>";
 
 
-      const url =
+      // ========================================
+      // CREATE UNIQUE CALLBACK
+      // ========================================
+
+      const callbackName =
+        "ticketCallback_" +
+        Date.now();
+
+
+      // ========================================
+      // CALLBACK FUNCTION
+      // ========================================
+
+      window[callbackName] =
+        function(result) {
+
+
+          // Remove callback
+
+          delete window[callbackName];
+
+
+          // Remove script
+
+          if (
+            script &&
+            script.parentNode
+          ) {
+
+            script.parentNode
+              .removeChild(script);
+
+          }
+
+
+          displayResult(result);
+
+        };
+
+
+      // ========================================
+      // CREATE JSONP SCRIPT
+      // ========================================
+
+      const script =
+        document.createElement("script");
+
+
+      script.src =
 
         SCRIPT_URL +
 
@@ -356,14 +439,273 @@
 
         encodeURIComponent(
           String(ticketNumber).trim()
+        ) +
+
+        "&callback=" +
+
+        callbackName;
+
+
+      // ========================================
+      // CONNECTION ERROR
+      // ========================================
+
+      script.onerror =
+        function() {
+
+
+          delete window[callbackName];
+
+
+          if (
+            script.parentNode
+          ) {
+
+            script.parentNode
+              .removeChild(script);
+
+          }
+
+
+          resultBox.className =
+            "invalid";
+
+
+          resultBox.innerHTML =
+
+            "❌ SYSTEM ERROR" +
+
+            "<br><br>" +
+
+            "Unable to connect to ticket system." +
+
+            "<br><br>" +
+
+            "<button" +
+
+            " class=\"resultButton\"" +
+
+            " onclick=\"location.reload()\"" +
+
+            ">" +
+
+            "🔄 Try Again" +
+
+            "</button>";
+
+        };
+
+
+      document.body.appendChild(
+        script
+      );
+
+    }
+
+
+    // ==========================================
+    // DISPLAY RESULT
+    // ==========================================
+
+    function displayResult(result) {
+
+
+      const resultBox =
+        document.getElementById(
+          "result"
         );
 
 
       // ========================================
-      // OPEN APPS SCRIPT RESULT PAGE
+      // VALID
       // ========================================
 
-      window.location.href = url;
+      if (
+        result.status === "VALID"
+      ) {
+
+
+        resultBox.className =
+          "valid";
+
+
+        resultBox.innerHTML =
+
+          "✅ VALID TICKET" +
+
+          "<br><br>" +
+
+          "<strong>" +
+
+          result.ticketNumber +
+
+          "</strong>" +
+
+          "<br><br>" +
+
+          result.name +
+
+          "<br>" +
+
+          result.ticketType +
+
+          "<br><br>" +
+
+          "<strong>" +
+
+          "CHECKED IN" +
+
+          "</strong>" +
+
+          "<br><br>" +
+
+          "<button" +
+
+          " class=\"resultButton\"" +
+
+          " onclick=\"scanNextTicket()\"" +
+
+          ">" +
+
+          "📷 SCAN NEXT TICKET" +
+
+          "</button>";
+
+
+        return;
+
+      }
+
+
+      // ========================================
+      // ALREADY CHECKED IN
+      // ========================================
+
+      if (
+        result.status ===
+        "ALREADY_CHECKED_IN"
+      ) {
+
+
+        resultBox.className =
+          "already";
+
+
+        resultBox.innerHTML =
+
+          "⚠️ ALREADY CHECKED IN" +
+
+          "<br><br>" +
+
+          "<strong>" +
+
+          result.ticketNumber +
+
+          "</strong>" +
+
+          "<br><br>" +
+
+          result.name +
+
+          "<br>" +
+
+          result.ticketType +
+
+          "<br><br>" +
+
+          "First check-in:" +
+
+          "<br>" +
+
+          result.checkInTime +
+
+          "<br><br>" +
+
+          "<button" +
+
+          " class=\"resultButton\"" +
+
+          " onclick=\"scanNextTicket()\"" +
+
+          ">" +
+
+          "📷 SCAN NEXT TICKET" +
+
+          "</button>";
+
+
+        return;
+
+      }
+
+
+      // ========================================
+      // INVALID
+      // ========================================
+
+      resultBox.className =
+        "invalid";
+
+
+      resultBox.innerHTML =
+
+        "❌ INVALID TICKET" +
+
+        "<br><br>" +
+
+        "<strong>" +
+
+        (
+          result.ticketNumber ||
+          "UNKNOWN"
+        ) +
+
+        "</strong>" +
+
+        "<br><br>" +
+
+        "<button" +
+
+        " class=\"resultButton\"" +
+
+        " onclick=\"scanNextTicket()\"" +
+
+        ">" +
+
+        "📷 TRY AGAIN" +
+
+        "</button>";
+
+    }
+
+
+    // ==========================================
+    // SCAN NEXT TICKET
+    // ==========================================
+
+    function scanNextTicket() {
+
+
+      document.getElementById(
+        "result"
+      ).className = "waiting";
+
+
+      document.getElementById(
+        "result"
+      ).innerHTML =
+
+        "📷 Ready for next ticket.";
+
+
+      document.getElementById(
+        "startButton"
+      ).style.display = "block";
+
+
+      document.getElementById(
+        "reader"
+      ).innerHTML = "";
 
     }
 
